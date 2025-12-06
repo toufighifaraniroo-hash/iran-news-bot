@@ -1,3 +1,4 @@
+# Force Python 3.12 - fixed 2025
 import feedparser
 import asyncio
 import logging
@@ -70,3 +71,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
