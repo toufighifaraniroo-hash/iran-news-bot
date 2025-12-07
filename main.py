@@ -152,3 +152,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+async def test_feed():
+    feed = feedparser.parse("https://www.isna.ir/rss")
+    print(f"Test: Entries = {len(feed.entries) if feed.entries else 0}")
+    if feed.bozo_exception:
+        print(f"Error: {feed.bozo_exception}")
+
+# در main() اول اینو صدا بزن
+await test_feed()
