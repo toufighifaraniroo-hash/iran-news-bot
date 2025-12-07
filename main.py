@@ -1,74 +1,143 @@
-# Force Python 3.12 - fixed 2025
-import feedparser
+import os
 import asyncio
-import logging
-from datetime import datetime
+import feedparser
 from telegram import Bot
 from telegram.constants import ParseMode
 
-# تنظیمات
-TOKEN = " 8130796014:AAFaHCOMVXkxQ2hNA5NSQ5_sAVikB0Wkx5o"  # توکن رباتت رو اینجا بذار
-CHANNEL_ID = "@world_iran_khabar"  # مثلاً @MyIranNews
-RSS_URL = " https://rss.app/rss-feed?keyword=%D8%A7%DB%8C%D8%B1%D8%A7%D9%86&region=US&lang=en"  # RSS URL از RSS.app
+# توکن را از متغیر محیطی می‌خوانیم
+TOKEN = os.environ["TELEGRAM_TOKEN"]
+CHANNEL_ID = "@world_iran_khabar"
 
-# لیست اخبار دیده‌شده (برای جلوگیری از تکرار، در فایل ذخیره می‌شه)
-SEEN_NEWS_FILE = "seen_news.txt"
-seen_news = set()
+# لیست RSSها (در صورت نیاز بعداً می‌توانی عوض کنی)
+RSS_URLS = [
+    "https://en.mehrnews.com/rss",
+    "https://www.tehrantimes.com/rss",
+    "https://presstv.ir/rss",
+    "https://ifpnews.com/feed/",
+    "https://www.tasnimnews.com/en/rss/feed/0/7/0/0",
+]
 
-# لود اخبار دیده‌شده
+SEEN_FILE = "seen.txt"
+
+
 def load_seen():
     try:
-        with open(SEEN_NEWS_FILE, "r") as f:
-            return set(line.strip() for line in f)
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+            return set(line.strip() for line in f if line.strip())
     except FileNotFoundError:
         return set()
+    except Exception as e:
+        print(f"خطا در خواندن {SEEN_FILE}: {e}")
+        return set()
 
-# ذخیره اخبار
-def save_seen(news_id):
-    with open(SEEN_NEWS_FILE, "a") as f:
-        f.write(news_id + "\n")
 
-# فانکشن پست کردن به کانال
-async def post_to_channel(bot, title, link, description, image_url=None):
-    message = f"<b>{title}</b>\n\n{description[:500]}...\n\n<a href='{link}'>بیشتر بخوانید</a>"  # HTML mode
-    if image_url:
-        await bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=message, parse_mode=ParseMode.HTML)
-    else:
-        await bot.send_message(chat_id=CHANNEL_ID, text=message, parse_mode=ParseMode.HTML, disable_web_page_preview=False)
+def save_seen(news_id: str) -> None:
+    try:
+        with open(SEEN_FILE, "a", encoding="utf-8") as f:
+            f.write(news_id + "\n")
+    except Exception as e:
+        print(f"خطا در ذخیره seen: {e}")
 
-# چک کردن RSS و پست کردن
-async def check_rss():
-    global seen_news
-    seen_news = load_seen()
-    bot = Bot(token=TOKEN)
 
-    feed = feedparser.parse(RSS_URL)
-    new_posts = 0
+async def post(title: str, link: str, desc: str, img: str | None = None) -> None:
+    bot = Bot(TOKEN)
+    text = f"<b>{title}</b>\n\n{desc[:500]}...\n\n<a href='{link}'>🔗 ادامه مطلب</a>"
 
-    for entry in feed.entries[:5]:  # فقط ۵ تا آخر رو چک کن
-        news_id = entry.id or entry.link  # ID منحصربه‌فرد
-        if news_id not in seen_news:
-            title = entry.title
-            link = entry.link
-            description = entry.get('summary', 'خلاصه‌ای موجود نیست')
-            image_url = entry.get('media_content', [{}])[0].get('url') if entry.get('media_content') else None
+    try:
+        if img and img.startswith(("http://", "https://")):
+            await bot.send_photo(
+                chat_id=CHANNEL_ID,
+                photo=img,
+                caption=text,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=False,
+            )
+            print(f"ارسال با عکس: {title[:40]}...")
+        else:
+            await bot.send_message(
+                chat_id=CHANNEL_ID,
+                text=text,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=False,
+            )
+            print(f"ارسال: {title[:40]}...")
+    except Exception as e:
+        print(f"خطا در ارسال پیام/عکس: {e}")
 
-            await post_to_channel(bot, title, link, description, image_url)
-            save_seen(news_id)
-            new_posts += 1
-            print(f"پست جدید: {title}")
 
-    if new_posts == 0:
-        print("خبر جدیدی نیست.")
+async def check_rss(url: str, seen: set[str]) -> int:
+    print(f"\nچک کردن: {url}")
+    feed = feedparser.parse(url)
 
-# حلقه اصلی (هر ۱۰ دقیقه)
-async def main():
-    logging.basicConfig(level=logging.INFO)
-    print("ربات شروع شد...")
+    # فقط برای لاگ و دیباگ ساده
+    status = getattr(feed, "status", "N/A")
+    entries = len(getattr(feed, "entries", []))
+    print(f"Status: {status} | Entries: {entries}")
+
+    if not entries:
+        print("هیچ خبری برنگشت (احتمالاً دسترسی یا فیلتر).")
+        return 0
+
+    new_count = 0
+
+    # 10 خبر آخر
+    for item in reversed(feed.entries[:10]):
+        news_id = item.get("id") or item.get("link") or (item.get("title", "") + item.get("link", ""))
+
+        if not news_id or news_id in seen:
+            continue
+
+        title = item.get("title", "بدون عنوان")[:100]
+        link = item.get("link", "")
+        desc = (item.get("summary") or item.get("description", "خلاصه موجود نیست"))[:400]
+
+        img = None
+        if hasattr(item, "media_content") and item.media_content:
+            img = item.media_content[0].get("url")
+        elif hasattr(item, "enclosures") and item.enclosures:
+            img = item.enclosures[0].get("href")
+
+        await post(title, link, desc, img)
+        seen.add(news_id)
+        save_seen(news_id)
+        new_count += 1
+
+        if new_count >= 3:  # حداکثر 3 خبر از هر فید
+            break
+
+        await asyncio.sleep(3)
+
+    return new_count
+
+
+async def check_all() -> None:
+    seen = load_seen()
+    total_new = 0
+
+    print("=" * 50)
+    print(f"تعداد خبرهای قبلاً دیده شده: {len(seen)}")
+
+    for url in RSS_URLS:
+        try:
+            new_cnt = await check_rss(url, seen)
+            total_new += new_cnt
+        except Exception as e:
+            print(f"خطا در پردازش {url}: {e}")
+        await asyncio.sleep(5)
+
+    print(f"\nمجموع خبرهای جدید ارسال‌شده: {total_new}")
+
+
+async def main() -> None:
+    print("ربات خبر ایران راه‌اندازی شد (Loop هر ۱۵ دقیقه)")
     while True:
-        await check_rss()
-        await asyncio.sleep(600)  # ۱۰ دقیقه صبر
+        try:
+            await check_all()
+        except Exception as e:
+            print(f"خطای کلی: {e}")
+        print("خواب ۱۵ دقیقه...")
+        await asyncio.sleep(900)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
-
