@@ -16,6 +16,7 @@ SEEN_FILE = "seen.txt"
 # منابع فارسی (۱۰۰٪ کار می‌کنه)
 PERSIAN_RSS = [
     "https://www.varzesh3.com/rss/football",
+    "https://cdn.mysitemapgenerator.com/shareapi/rss/09121752472",
 
 ]
 
@@ -104,3 +105,4 @@ def home():
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(run_bot()), daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
