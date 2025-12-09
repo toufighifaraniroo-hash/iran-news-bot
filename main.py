@@ -3,6 +3,8 @@ import asyncio
 import threading
 import os
 import requests
+import cloudscraper
+scraper = cloudscraper.create_scraper()  # دور زدن Cloudflare و بلاک ایرانی
 from flask import Flask
 from telegram import Bot
 from telegram.constants import ParseMode
@@ -89,7 +91,7 @@ async def check_all():
     # فارسی‌ها
     for url in PERSIAN_SPORTS:
         try:
-            feed = feedparser.parse(url)
+            feed = feedparser.parse(scraper.get(url).text)   # ← این خط جادویی!
             for entry in feed.entries[:7]:
                 link = entry.link
                 if link in seen: continue
@@ -139,3 +141,4 @@ def catch_all(path):
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(bot_loop()), daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+
