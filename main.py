@@ -1,6 +1,7 @@
 import feedparser
 import asyncio
 import threading
+import os
 from flask import Flask
 from telegram import Bot
 from telegram.constants import ParseMode
@@ -63,3 +64,4 @@ def catch_all(path):
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(bot_loop()), daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))  # Render port
+
