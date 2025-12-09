@@ -3,10 +3,8 @@ import asyncio
 from telegram import Bot
 from telegram.constants import ParseMode
 
-# ────────────────────── تنظیمات (فقط توکن و کانال رو عوض کن) ──────────────────────
-TOKEN ="8130796014:AAFaHCOMVXkxQ2hNA5NSQ5_sAVikB0Wkx5o"
+TOKEN = "8130796014:AAFaHCOMVXkxQ2hNA5NSQ5_sAVikB0Wkx5o"
 CHANNEL_ID = "@world_iran_khabar"
-# ───────────────────────────────────────────────────────────────────────
 
 SEEN_FILE = "seen.txt"
 
@@ -23,52 +21,38 @@ def save_seen(link):
 
 async def post(title, link):
     bot = Bot(TOKEN)
-    text = f"<b>{title}</b>\n\n🔗 <a href='{link}'>ادامه مطلب</a>"
+    text = f"<b>فوتبال ⚽ {title}</b>\n\n🔗 <a href='{link}'>ادامه در ورزش۳</a>"
     try:
-        await bot.send_message(
-            chat_id=CHANNEL_ID,
-            text=text,
-            parse_mode=ParseMode.HTML,
-            disable_web_page_preview=False
-        )
-        print(f"ارسال شد: {title[:60]}")
+        await bot.send_message(CHANNEL_ID, text, parse_mode=ParseMode.HTML)
+        print(f"فوتبال: {title[:50]}")
     except Exception as e:
-        print(f"خطا در ارسال: {e}")
+        print(f"خطا: {e}")
 
-async def check_news():
-    # این لینک ۱۰۰٪ در لیست سفید PythonAnywhere رایگان هست (تست شده دسامبر ۲۰۲۵)
-    url = "https://www.varzesh3.com/rss/foreignfootball"
-
-    print(f"\nدر حال چک کردن اخبار جدید (whitelist)...")
+async def check_varzesh3():
+    url = "https://www.varzesh3.com/rss/football"  # فقط فوتبال ورزش۳
     feed = feedparser.parse(url)
-
+    
     if not feed.entries:
-        print("هیچ خبری پیدا نشد — ولی لینک whitelist هست")
+        print("ورزش۳ چیزی نداد")
         return
-
-    print(f"{len(feed.entries)} خبر پیدا شد")
+    
     seen = load_seen()
     new = 0
-
-    for entry in feed.entries[:12]:  # حداکثر ۱۲ خبر جدید
+    for entry in feed.entries[:10]:
         link = entry.link
         if link not in seen:
-            title = entry.title
-            await post(title, link)
+            await post(entry.title, link)
             save_seen(link)
             new += 1
             await asyncio.sleep(3)
-
-    print(f"چک تمام — {new} خبر جدید ارسال شد")
+    print(f"ورزش۳: {new} خبر جدید")
 
 async def main():
-    print("ربات خبر ایران شروع شد — هر ۱۰ دقیقه چک می‌کنه")
-    print("منبع: Google News (در لیست سفید PythonAnywhere)")
+    print("ربات فقط فوتبال ورزش۳ شروع شد!")
     while True:
-        await check_news()
-        print("خواب ۱۰ دقیقه...\n")
-        await asyncio.sleep(600)  # ۱۰ دقیقه
+        await check_varzesh3()
+        print("خواب ۱۰ دقیقه...")
+        await asyncio.sleep(600)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
