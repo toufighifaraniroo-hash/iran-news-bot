@@ -37,9 +37,9 @@ async def post(title, link):
 
 async def check_news():
     # این لینک ۱۰۰٪ در لیست سفید PythonAnywhere رایگان هست (تست شده دسامبر ۲۰۲۵)
-    url = "https://news.google.com/rss/search?q=ایران&hl=fa&gl=IR&ceid=IR:fa"
+    url = "https://www.varzesh3.com/rss/foreignfootball"
 
-    print(f"\nدر حال چک کردن گوگل نیوز (whitelist)...")
+    print(f"\nدر حال چک کردن اخبار جدید (whitelist)...")
     feed = feedparser.parse(url)
 
     if not feed.entries:
@@ -71,3 +71,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
