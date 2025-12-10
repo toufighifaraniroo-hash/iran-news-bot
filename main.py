@@ -24,6 +24,8 @@ PERSIAN_RSS = [
     "https://www.khabaronline.ir/rss/tp/6",#خبرآنلاین
     "https://www.tabnak.ir/fa/rss/2",#تابناک
     "https://www.tarafdari.com/static/page/taxonomy/all/feed.xml",
+    "https://rss.app/feeds/I8kJm045rvJ22qZT.xml",#footbali
+    "https://rss.app/feeds/4731oOHVZfToTFtd.xml",#fartak
 ]
 
 # منابع خارجی (ترجمه به فارسی)
@@ -104,13 +106,13 @@ async def check_all():
                 if url in PERSIAN_RSS:
                     title_fa = title_en
                     summary_fa = summary_en
-                    tag = "#ایران"
+                    tag = "#منابع_داخلی"
                 else:
                     title_fa = translate(title_en)
                     summary_fa = translate(summary_en)
                     if len(summary_fa) > 350:
                         summary_fa = summary_fa[:347] + "..."
-                    tag = "#جهان"
+                    tag = "#ترجمه_ماشینی"
 
                 await post(title_fa, summary_fa, link, tag)
                 save_seen(link)
@@ -136,5 +138,6 @@ def home():
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(run_bot()), daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
