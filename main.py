@@ -20,9 +20,10 @@ GITHUB_SEEN_URL = "https://github.com/toufighifaraniroo-hash/iran-news-bot/blob/
 
 # منابع فارسی
 PERSIAN_RSS = [
-    "https://cdn.mysitemapgenerator.com/shareapi/rss/09121752472",
-    "https://cdn.mysitemapgenerator.com/shareapi/rss/09121752472",#خبرآنلاین
-    "https://cdn.mysitemapgenerator.com/shareapi/rss/09121752503",#فوتبال360
+    "https://www.varzesh3.com/rss/all",
+    "https://www.khabaronline.ir/rss/tp/6",#خبرآنلاین
+    "https://www.tabnak.ir/fa/rss/2",#تابناک
+    "https://www.tarafdari.com/static/page/taxonomy/all/feed.xml",
 ]
 
 # منابع خارجی (ترجمه به فارسی)
@@ -135,4 +136,5 @@ def home():
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(run_bot()), daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
