@@ -34,6 +34,9 @@ INTERNATIONAL_RSS = [
     "https://www.theguardian.com/football/rss",
     "https://feeds.feedburner.com/reuters/sportsNews",
     "https://rss.nytimes.com/services/xml/rss/nyt/Soccer.xml",
+    "https://rss.app/feeds/L7pnSAXheOy6hF3c.xml",#goal
+    "https://www.marca.com/en/sports/rss/index.html",
+    "https://rss.app/feeds/kGqlBucQ7SLs7g6M.xml"
 ]
 
 def load_seen():
@@ -138,6 +141,7 @@ def home():
 if __name__ == "__main__":
     threading.Thread(target=lambda: asyncio.run(run_bot()), daemon=True).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
 
